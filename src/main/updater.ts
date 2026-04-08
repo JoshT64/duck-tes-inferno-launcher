@@ -99,7 +99,7 @@ export async function downloadAndInstall(
   await fsp.rm(newDir, { recursive: true, force: true })
   await fsp.mkdir(newDir, { recursive: true })
 
-  const zip = new StreamZip.async({ file: tempZip })
+  const zip = new StreamZip.async({ file: tempZip, skipEntryNameValidation: true })
   await zip.extract(null, newDir)
   await zip.close()
 

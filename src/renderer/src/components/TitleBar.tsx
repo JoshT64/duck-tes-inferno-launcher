@@ -5,7 +5,7 @@ export default function TitleBar() {
 
   return (
     <div className="title-bar">
-      <span className="title-bar-label">Duck-te's Inferno</span>
+      <span className="title-bar-label">Duckte's Inferno</span>
       <div className="title-bar-controls">
         <button
           className="title-bar-btn"

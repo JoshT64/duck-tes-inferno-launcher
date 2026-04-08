@@ -3,7 +3,7 @@ import type { BrowserWindow } from 'electron'
 import got from 'got'
 import { randomUUID } from 'node:crypto'
 import store from './store'
-import { LEADERBOARD_API_URL } from './config'
+import { LEADERBOARD_API_URL, getDefaultInstallPath } from './config'
 import {
   fetchLatestRelease,
   fetchAllReleases,
@@ -58,6 +58,12 @@ export function setupIPC(mainWindow: BrowserWindow): void {
       })
       store.set('playerId', playerId)
       store.set('displayName', displayName)
+
+      // Set default install path if not already set
+      if (!store.get('installPath')) {
+        store.set('installPath', getDefaultInstallPath())
+      }
+
       return { success: true, playerId }
     } catch (err) {
       return { success: false, error: String(err) }

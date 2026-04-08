@@ -8,25 +8,15 @@ interface FirstLaunchProps {
 export default function FirstLaunch({ onComplete }: FirstLaunchProps): ReactElement {
   const api = useElectronAPI()
   const [displayName, setDisplayName] = useState('')
-  const [installPath, setInstallPath] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const isValid = displayName.length >= 3 && displayName.length <= 16
 
-  async function handleBrowse(): Promise<void> {
-    const path = await api.selectDirectory()
-    if (path) setInstallPath(path)
-  }
-
   async function handleSubmit(): Promise<void> {
     if (!isValid) return
     setLoading(true)
     setError('')
-
-    if (installPath) {
-      await api.updateSetting('installPath', installPath)
-    }
 
     const result = await api.registerPlayer(displayName)
     if (result.success) {
@@ -39,7 +29,7 @@ export default function FirstLaunch({ onComplete }: FirstLaunchProps): ReactElem
 
   return (
     <div className="first-launch">
-      <h1>Welcome to Duck-te&apos;s Inferno</h1>
+      <h1>Welcome to Duckte&apos;s Inferno</h1>
       <p>Set up your launcher to get started.</p>
 
       <label>
@@ -53,14 +43,6 @@ export default function FirstLaunch({ onComplete }: FirstLaunchProps): ReactElem
         />
       </label>
       <span className="char-count">{displayName.length}/16</span>
-
-      <label>
-        Install Location
-        <div className="path-picker">
-          <input type="text" value={installPath} readOnly placeholder="Default location" />
-          <button onClick={handleBrowse}>Browse</button>
-        </div>
-      </label>
 
       {error && <p className="error">{error}</p>}
 

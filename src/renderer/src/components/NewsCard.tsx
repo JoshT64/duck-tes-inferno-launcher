@@ -1,13 +1,18 @@
 import type { Release } from '../types'
 
-interface NewsCardProps { release: Release }
+interface NewsCardProps { release: Release; onClick?: () => void }
 
-export default function NewsCard({ release }: NewsCardProps) {
+function stripMarkdown(text: string): string {
+  return text.replace(/#{1,6}\s*/g, '').replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+}
+
+export default function NewsCard({ release, onClick }: NewsCardProps) {
   const date = new Date(release.published_at).toLocaleDateString()
-  const snippet = release.body.length > 100 ? release.body.substring(0, 100) + '...' : release.body
+  const stripped = stripMarkdown(release.body)
+  const snippet = stripped.length > 100 ? stripped.substring(0, 100) + '...' : stripped
 
   return (
-    <div className="news-card">
+    <div className="news-card" onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
       <div className="news-card-header">
         <span className="news-card-version">{release.tag_name}</span>
         <span className="news-card-date">{date}</span>

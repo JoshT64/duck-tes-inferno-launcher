@@ -3,6 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 import { setupIPC } from './ipc'
+import store from './store'
+import { getDefaultInstallPath } from './config'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,6 +43,11 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  // Ensure install path is set
+  if (!store.get('installPath')) {
+    store.set('installPath', getDefaultInstallPath())
+  }
 
   createWindow()
 

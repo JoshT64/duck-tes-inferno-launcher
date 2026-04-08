@@ -2,6 +2,7 @@ node_modules
 dist
 dist-build
 out
+DuckteInferno
 .DS_Store
 *.local
 *.log

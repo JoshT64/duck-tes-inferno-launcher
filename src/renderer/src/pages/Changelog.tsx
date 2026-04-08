@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Markdown from 'react-markdown'
 import { useElectronAPI } from '../hooks/useElectronAPI'
 import type { Release } from '../types'
 
@@ -32,9 +33,7 @@ export default function Changelog() {
             </div>
             <h3>{release.name}</h3>
             <div className="changelog-body">
-              {release.body.split('\n').map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
+              <Markdown>{release.body}</Markdown>
             </div>
           </div>
         ))}

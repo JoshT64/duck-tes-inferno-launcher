@@ -1,5 +1,5 @@
 appId: com.ducktesinferno.launcher
-productName: "Duck-te's Inferno Launcher"
+productName: "Duckte's Inferno Launcher"
 
 directories:
   buildResources: resources
@@ -10,7 +10,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: "Duck-te's Inferno"
+  shortcutName: "Duckte's Inferno"
 
 win:
   target:

@@ -6,7 +6,11 @@ import NewsCard from '../components/NewsCard'
 import fireDuck from '../assets/fire-duck.png'
 import type { Release, GameState, DownloadProgress, DownloadStatus } from '../types'
 
-export default function Home() {
+interface HomeProps {
+  onNavigate: (tab: string) => void
+}
+
+export default function Home({ onNavigate }: HomeProps) {
   const api = useElectronAPI()
   const [releases, setReleases] = useState<Release[]>([])
   const [gameState, setGameState] = useState<GameState>('stopped')
@@ -67,21 +71,25 @@ export default function Home() {
 
   return (
     <div className="page home-page">
-      <div className="hero-banner" style={{ backgroundImage: `url(${fireDuck})` }}>
-        {latestRelease && (
-          <>
+      <div className="home-scroll">
+        <div className="hero-banner" style={{ backgroundImage: `url(${fireDuck})` }}>
+          {latestRelease && (
             <h2>{latestRelease.name || latestRelease.tag_name}</h2>
-            <p>{latestRelease.body.substring(0, 200)}</p>
-          </>
-        )}
-      </div>
+          )}
+        </div>
 
-      {isUpdating && <UpdateOverlay progress={downloadProgress} status={downloadStatus} />}
+        {isUpdating && <UpdateOverlay progress={downloadProgress} status={downloadStatus} />}
 
-      <div className="news-grid">
-        {releases.slice(0, 3).map((release) => (
-          <NewsCard key={release.tag_name} release={release} />
-        ))}
+        <div className="news-section">
+          <div className="news-section-header">
+            <h3>Recent Updates</h3>
+          </div>
+          <div className="news-grid">
+            {releases.slice(0, 3).map((release) => (
+              <NewsCard key={release.tag_name} release={release} onClick={() => onNavigate('changelog')} />
+            ))}
+          </div>
+        </div>
       </div>
 
       <PlayButton

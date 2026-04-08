@@ -24,7 +24,7 @@ export function getUnityLogPath(): string {
     '..',
     'LocalLow',
     'DucktesInferno',
-    'Duck-te-s-Inferno',
+    'Ducktes-Inferno',
     'Player.log'
   )
 }

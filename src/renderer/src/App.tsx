@@ -66,7 +66,7 @@ export default function App() {
       case 'settings':
         return <Settings />
       default:
-        return <Home />
+        return <Home onNavigate={setActiveTab} />
     }
   }
 

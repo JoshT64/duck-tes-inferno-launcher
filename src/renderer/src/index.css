@@ -1,5 +1,5 @@
 /* ============================================================
-   Duck-te's Inferno Launcher — Dark Infernal Theme
+   Duckte's Inferno Launcher — Dark Infernal Theme
    ============================================================ */
 
 /* --- CSS Variables --- */
@@ -295,15 +295,22 @@ a:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.home-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* --- Hero Banner --- */
 .hero-banner {
   position: relative;
-  height: 240px;
+  height: 330px;
   background-size: cover;
-  background-position: center top;
+  background-position: center 16%;
   background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
@@ -350,13 +357,34 @@ a:hover {
   line-height: 1.5;
 }
 
-/* --- News Grid --- */
+/* --- News Section --- */
+.news-section {
+  flex-shrink: 0;
+  padding: 0 24px 16px;
+}
+
+.news-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.news-section-header h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 .news-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  padding: 16px 24px;
-  flex-shrink: 0;
 }
 
 /* --- News Card --- */
@@ -417,9 +445,9 @@ a:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 24px 24px;
-  margin-top: auto;
+  padding: 16px 24px 20px;
   flex-shrink: 0;
+  background: var(--bg-base);
 }
 
 .play-button {
@@ -798,12 +826,31 @@ button {
   line-height: 1.7;
 }
 
-.changelog-body p {
-  margin-bottom: 2px;
+.changelog-body h2 {
+  font-size: 16px;
+  color: var(--accent);
+  margin: 16px 0 8px;
+  font-weight: 700;
 }
 
-.changelog-body p:empty {
-  margin-bottom: 8px;
+.changelog-body h3 {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+
+.changelog-body p {
+  margin-bottom: 4px;
+}
+
+.changelog-body ul {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+
+.changelog-body li {
+  margin-bottom: 2px;
 }
 
 /* ============================================================

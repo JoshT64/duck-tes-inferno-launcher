@@ -23,7 +23,7 @@ export default function TopNav({
     <nav className="top-nav">
       <div className="nav-left">
         <span className="nav-logo">&#x1F986;</span>
-        <span className="nav-title">DUCK-TE&apos;S INFERNO</span>
+        <span className="nav-title">DUCKTE&apos;S INFERNO</span>
       </div>
       <div className="nav-center">
         {tabs.map((tab) => (

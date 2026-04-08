@@ -1,7 +1,7 @@
 {
-  "name": "duck-tes-inferno-launcher",
+  "name": "ducktes-inferno-launcher",
   "version": "1.0.0",
-  "description": "Game launcher for Duck-te's Inferno",
+  "description": "Game launcher for Duckte's Inferno",
   "main": "./out/main/index.js",
   "author": "JoshT64",
   "license": "MIT",
@@ -27,7 +27,8 @@
     "electron-store": "^10.0.0",
     "electron-updater": "^6.3.9",
     "got": "^14.4.5",
-    "node-stream-zip": "^1.15.0"
+    "node-stream-zip": "^1.15.0",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
