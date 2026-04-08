@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react'
 import { useElectronAPI } from './hooks/useElectronAPI'
 import TopNav from './components/TopNav'
 import FirstLaunch from './components/FirstLaunch'
+import CrashDialog from './components/CrashDialog'
 import Home from './pages/Home'
 import Changelog from './pages/Changelog'
 import ReportBug from './pages/ReportBug'
 import Settings from './pages/Settings'
+import type { CrashData } from './types'
 
 export default function App() {
   const api = useElectronAPI()
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null)
   const [activeTab, setActiveTab] = useState('home')
   const [displayName, setDisplayName] = useState('')
+  const [crashData, setCrashData] = useState<CrashData | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -23,6 +26,8 @@ export default function App() {
       }
     }
     init()
+
+    api.onGameCrashed((data) => setCrashData(data))
   }, [])
 
   if (isFirstLaunch === null) {
@@ -65,6 +70,9 @@ export default function App() {
         onSettingsClick={() => setActiveTab(showSettings ? 'home' : 'settings')}
       />
       <main className="content">{renderPage()}</main>
+      {crashData && (
+        <CrashDialog crashData={crashData} onDismiss={() => setCrashData(null)} />
+      )}
     </div>
   )
 }
