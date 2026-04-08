@@ -11,6 +11,7 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: "Duckte's Inferno"
+  artifactName: "DuckteInferno-Launcher-Setup.${ext}"
 
 win:
   target:
