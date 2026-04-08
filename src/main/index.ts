@@ -1,12 +1,15 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
+import { setupIPC } from './ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1024,
+    height: 680,
     show: false,
+    frame: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -28,6 +31,8 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  setupIPC(mainWindow)
 }
 
 app.whenReady().then(() => {
@@ -38,6 +43,10 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  // Launcher self-updates via electron-updater
+  autoUpdater.autoDownload = true
+  autoUpdater.checkForUpdatesAndNotify()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
