@@ -1,6 +1,5 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, net } from 'electron'
 import type { BrowserWindow } from 'electron'
-import got from 'got'
 import { randomUUID } from 'node:crypto'
 import store from './store'
 import { LEADERBOARD_API_URL, getDefaultInstallPath } from './config'
@@ -12,6 +11,28 @@ import {
 } from './updater'
 import { launchGame, isGameRunning } from './launcher'
 import { submitBugReport, submitCrashReport } from './reporter'
+
+/** Helper: make HTTP request using Electron's net module */
+function netRequest(method: string, url: string, body?: unknown): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = net.request({ method, url })
+    request.setHeader('Content-Type', 'application/json')
+    request.setHeader('User-Agent', 'DuckteInferno-Launcher')
+    request.on('response', (response) => {
+      if (response.statusCode && response.statusCode >= 400) {
+        let data = ''
+        response.on('data', (chunk) => { data += chunk.toString() })
+        response.on('end', () => reject(new Error(`HTTP ${response.statusCode}: ${data}`)))
+        return
+      }
+      response.on('data', () => {})
+      response.on('end', () => resolve())
+    })
+    request.on('error', reject)
+    if (body) request.write(JSON.stringify(body))
+    request.end()
+  })
+}
 
 export function setupIPC(mainWindow: BrowserWindow): void {
   // Update checks
@@ -58,10 +79,7 @@ export function setupIPC(mainWindow: BrowserWindow): void {
   ipcMain.handle('register-player', async (_event, displayName: string) => {
     try {
       const playerId = randomUUID()
-      await got.post(`${LEADERBOARD_API_URL}/api/players`, {
-        json: { id: playerId, displayName },
-        responseType: 'json'
-      })
+      await netRequest('POST', `${LEADERBOARD_API_URL}/api/players`, { id: playerId, displayName })
       store.set('playerId', playerId)
       store.set('displayName', displayName)
 
@@ -79,10 +97,7 @@ export function setupIPC(mainWindow: BrowserWindow): void {
   ipcMain.handle('update-display-name', async (_event, displayName: string) => {
     try {
       const playerId = store.get('playerId')
-      await got.patch(`${LEADERBOARD_API_URL}/api/players/${playerId}`, {
-        json: { displayName },
-        responseType: 'json'
-      })
+      await netRequest('PATCH', `${LEADERBOARD_API_URL}/api/players/${playerId}`, { displayName })
       store.set('displayName', displayName)
       return { success: true }
     } catch (err) {

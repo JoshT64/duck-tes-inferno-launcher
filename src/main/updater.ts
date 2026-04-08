@@ -1,9 +1,8 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, net } from 'electron'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
-import got from 'got'
+import https from 'node:https'
 import StreamZip from 'node-stream-zip'
 import store from './store'
 import { RELEASES_API_URL, VERSION_FILENAME } from './config'
@@ -26,29 +25,37 @@ interface VersionInfo {
 
 export type { GitHubRelease }
 
-export async function fetchLatestRelease(): Promise<GitHubRelease> {
-  const response = await got(RELEASES_API_URL, {
-    headers: {
-      'User-Agent': 'DuckteInferno-Launcher',
-      Accept: 'application/vnd.github+json'
-    },
-    responseType: 'json',
-    timeout: { request: 10000 }
+/** Simple JSON GET using Electron's net module (respects proxy, no ESM issues) */
+function fetchJSON(url: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const request = net.request(url)
+    request.setHeader('User-Agent', 'DuckteInferno-Launcher')
+    request.setHeader('Accept', 'application/vnd.github+json')
+
+    let data = ''
+    request.on('response', (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`HTTP ${response.statusCode} from ${url}`))
+        return
+      }
+      response.on('data', (chunk) => { data += chunk.toString() })
+      response.on('end', () => {
+        try { resolve(JSON.parse(data)) }
+        catch (e) { reject(e) }
+      })
+    })
+    request.on('error', reject)
+    request.end()
   })
-  return response.body as GitHubRelease
+}
+
+export async function fetchLatestRelease(): Promise<GitHubRelease> {
+  return (await fetchJSON(RELEASES_API_URL)) as GitHubRelease
 }
 
 export async function fetchAllReleases(): Promise<GitHubRelease[]> {
   const allReleasesUrl = RELEASES_API_URL.replace('/latest', '')
-  const response = await got(allReleasesUrl, {
-    headers: {
-      'User-Agent': 'DuckteInferno-Launcher',
-      Accept: 'application/vnd.github+json'
-    },
-    responseType: 'json',
-    timeout: { request: 10000 }
-  })
-  return response.body as GitHubRelease[]
+  return (await fetchJSON(allReleasesUrl)) as GitHubRelease[]
 }
 
 export function getInstalledVersion(): string | null {
@@ -69,6 +76,45 @@ export function isUpdateAvailable(latestTag: string): boolean {
   return installed !== latestTag
 }
 
+/** Download a file with progress using Node https (follows redirects) */
+function downloadFile(
+  url: string,
+  destPath: string,
+  onProgress: (transferred: number, total: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const doRequest = (requestUrl: string): void => {
+      https.get(requestUrl, { headers: { 'User-Agent': 'DuckteInferno-Launcher' } }, (res) => {
+        // Follow redirects (GitHub sends 302)
+        if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
+          doRequest(res.headers.location)
+          return
+        }
+
+        if (res.statusCode !== 200) {
+          reject(new Error(`Download failed: HTTP ${res.statusCode}`))
+          return
+        }
+
+        const total = parseInt(res.headers['content-length'] || '0', 10)
+        let transferred = 0
+        const file = fs.createWriteStream(destPath)
+
+        res.on('data', (chunk: Buffer) => {
+          transferred += chunk.length
+          onProgress(transferred, total)
+        })
+
+        res.pipe(file)
+        file.on('finish', () => { file.close(() => resolve()) })
+        file.on('error', reject)
+      }).on('error', reject)
+    }
+
+    doRequest(url)
+  })
+}
+
 export async function downloadAndInstall(
   release: GitHubRelease,
   mainWindow: BrowserWindow
@@ -86,21 +132,14 @@ export async function downloadAndInstall(
   await fsp.mkdir(gameDir, { recursive: true })
 
   // Download with progress
-  const downloadStream = got.stream(zipAsset.browser_download_url, {
-    headers: { 'User-Agent': 'DuckteInferno-Launcher' }
-  })
-
-  downloadStream.on('downloadProgress', (progress) => {
+  await downloadFile(zipAsset.browser_download_url, tempZip, (transferred, total) => {
+    const actualTotal = total || zipAsset.size
     mainWindow.webContents.send('download-progress', {
-      percent: Math.round((progress.percent || 0) * 100),
-      transferred: progress.transferred,
-      total: progress.total || zipAsset.size,
-      speed: 0
+      percent: actualTotal > 0 ? Math.round((transferred / actualTotal) * 100) : 0,
+      transferred,
+      total: actualTotal
     })
   })
-
-  const writeStream = fs.createWriteStream(tempZip)
-  await pipeline(downloadStream, writeStream)
 
   // Extract
   mainWindow.webContents.send('download-status', 'extracting')

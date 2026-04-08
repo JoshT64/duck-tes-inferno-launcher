@@ -1,4 +1,4 @@
-import got from 'got'
+import { net } from 'electron'
 import fsp from 'node:fs/promises'
 import os from 'node:os'
 import store from './store'
@@ -21,6 +21,28 @@ interface CrashReportPayload {
   playerLog?: string
   systemInfo?: Record<string, string>
   gameVersion?: string
+}
+
+/** POST JSON using Electron's net module */
+function postJSON(url: string, body: unknown): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = net.request({ method: 'POST', url })
+    request.setHeader('Content-Type', 'application/json')
+    request.setHeader('User-Agent', 'DuckteInferno-Launcher')
+
+    request.on('response', (response) => {
+      if (response.statusCode && response.statusCode >= 400) {
+        reject(new Error(`HTTP ${response.statusCode} from ${url}`))
+        return
+      }
+      // Consume response
+      response.on('data', () => {})
+      response.on('end', () => resolve())
+    })
+    request.on('error', reject)
+    request.write(JSON.stringify(body))
+    request.end()
+  })
 }
 
 async function getPlayerLog(): Promise<string> {
@@ -61,11 +83,7 @@ export async function submitBugReport(
       payload.playerLog = await getPlayerLog()
     }
 
-    await got.post(`${LAUNCHER_API_URL}/api/bug-reports`, {
-      json: payload,
-      responseType: 'json'
-    })
-
+    await postJSON(`${LAUNCHER_API_URL}/api/bug-reports`, payload)
     return { success: true }
   } catch (err) {
     return { success: false, error: String(err) }
@@ -86,11 +104,7 @@ export async function submitCrashReport(
       gameVersion: store.get('gameVersion') || 'unknown'
     }
 
-    await got.post(`${LAUNCHER_API_URL}/api/crash-reports`, {
-      json: payload,
-      responseType: 'json'
-    })
-
+    await postJSON(`${LAUNCHER_API_URL}/api/crash-reports`, payload)
     return { success: true }
   } catch (err) {
     return { success: false, error: String(err) }
