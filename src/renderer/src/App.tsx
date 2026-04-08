@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useElectronAPI } from './hooks/useElectronAPI'
+import TitleBar from './components/TitleBar'
 import TopNav from './components/TopNav'
 import FirstLaunch from './components/FirstLaunch'
 import CrashDialog from './components/CrashDialog'
@@ -31,18 +32,26 @@ export default function App() {
   }, [])
 
   if (isFirstLaunch === null) {
-    return <div className="loading">Loading...</div>
+    return (
+      <div className="app">
+        <TitleBar />
+        <div className="loading">Loading...</div>
+      </div>
+    )
   }
 
   if (isFirstLaunch) {
     return (
-      <FirstLaunch
-        onComplete={async () => {
-          const player = await api.getPlayer()
-          setDisplayName(player.displayName)
-          setIsFirstLaunch(false)
-        }}
-      />
+      <div className="app">
+        <TitleBar />
+        <FirstLaunch
+          onComplete={async () => {
+            const player = await api.getPlayer()
+            setDisplayName(player.displayName)
+            setIsFirstLaunch(false)
+          }}
+        />
+      </div>
     )
   }
 
@@ -63,6 +72,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <TitleBar />
       <TopNav
         activeTab={activeTab}
         onTabChange={setActiveTab}

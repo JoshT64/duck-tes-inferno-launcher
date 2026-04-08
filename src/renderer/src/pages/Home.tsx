@@ -3,6 +3,7 @@ import { useElectronAPI } from '../hooks/useElectronAPI'
 import PlayButton from '../components/PlayButton'
 import UpdateOverlay from '../components/UpdateOverlay'
 import NewsCard from '../components/NewsCard'
+import fireDuck from '../assets/fire-duck.png'
 import type { Release, GameState, DownloadProgress, DownloadStatus } from '../types'
 
 export default function Home() {
@@ -66,7 +67,7 @@ export default function Home() {
 
   return (
     <div className="page home-page">
-      <div className="hero-banner">
+      <div className="hero-banner" style={{ backgroundImage: `url(${fireDuck})` }}>
         {latestRelease && (
           <>
             <h2>{latestRelease.name || latestRelease.tag_name}</h2>
