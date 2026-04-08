@@ -6,6 +6,10 @@ export const RELEASES_OWNER = 'JoshT64'
 export const RELEASES_REPO = 'duck-tes-inferno-releases'
 export const RELEASES_API_URL = `https://api.github.com/repos/${RELEASES_OWNER}/${RELEASES_REPO}/releases/latest`
 
+// Read-only token for public repo access (avoids 60 req/hr anonymous rate limit → 5,000 req/hr)
+// Injected at build time via VITE_GITHUB_TOKEN env var, or falls back to .env file
+export const GITHUB_TOKEN = process.env.GITHUB_TOKEN || ''
+
 // Supabase
 export const SUPABASE_URL = 'https://wyksiiqnmjxauhintiwi.supabase.co'
 export const SUPABASE_FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`

@@ -3,6 +3,7 @@ dist
 dist-build
 out
 DuckteInferno
+.env
 .DS_Store
 *.local
 *.log

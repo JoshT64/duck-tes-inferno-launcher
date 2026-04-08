@@ -5,7 +5,7 @@ import path from 'node:path'
 import https from 'node:https'
 import StreamZip from 'node-stream-zip'
 import store from './store'
-import { RELEASES_API_URL, VERSION_FILENAME } from './config'
+import { RELEASES_API_URL, VERSION_FILENAME, GITHUB_TOKEN } from './config'
 
 interface GitHubRelease {
   tag_name: string
@@ -31,6 +31,9 @@ function fetchJSON(url: string): Promise<unknown> {
     const request = net.request(url)
     request.setHeader('User-Agent', 'DuckteInferno-Launcher')
     request.setHeader('Accept', 'application/vnd.github+json')
+    if (GITHUB_TOKEN) {
+      request.setHeader('Authorization', `Bearer ${GITHUB_TOKEN}`)
+    }
 
     let data = ''
     request.on('response', (response) => {
