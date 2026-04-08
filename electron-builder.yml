@@ -1,35 +1,25 @@
-appId: com.duckteinferno.launcher
-productName: Duck-tes Inferno Launcher
+appId: com.ducktesinferno.launcher
+productName: "Duck-te's Inferno Launcher"
+
 directories:
-  buildResources: build
-files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-win:
-  executableName: duck-tes-inferno-launcher
+  buildResources: resources
+  output: dist-build
+
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
-mac:
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
-dmg:
-  artifactName: ${name}-${version}.${ext}
-linux:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Duck-te's Inferno"
+
+win:
   target:
-    - AppImage
-    - snap
-    - deb
-  maintainer: JoshT64
-  category: Game
-appImage:
-  artifactName: ${name}-${version}.${ext}
-npmRebuild: false
+    - nsis
+  icon: resources/icon.ico
+  signAndEditExecutable: false
+
+publish:
+  provider: github
+  owner: JoshT64
+  repo: duck-tes-inferno-launcher
+  releaseType: release
