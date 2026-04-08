@@ -21,13 +21,19 @@ export function setupIPC(mainWindow: BrowserWindow): void {
       const available = isUpdateAvailable(release.tag_name)
       return { available, version: release.tag_name, changelog: release.body }
     } catch (err) {
+      console.error('check-for-update failed:', err)
       return { available: false, error: String(err) }
     }
   })
 
   ipcMain.handle('start-update', async () => {
-    const release = await fetchLatestRelease()
-    await downloadAndInstall(release, mainWindow)
+    try {
+      const release = await fetchLatestRelease()
+      await downloadAndInstall(release, mainWindow)
+    } catch (err) {
+      console.error('start-update failed:', err)
+      throw err
+    }
   })
 
   // Game launching
@@ -88,7 +94,8 @@ export function setupIPC(mainWindow: BrowserWindow): void {
   ipcMain.handle('fetch-releases', async () => {
     try {
       return await fetchAllReleases()
-    } catch {
+    } catch (err) {
+      console.error('fetch-releases failed:', err)
       return []
     }
   })

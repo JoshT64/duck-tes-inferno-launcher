@@ -28,8 +28,12 @@ export type { GitHubRelease }
 
 export async function fetchLatestRelease(): Promise<GitHubRelease> {
   const response = await got(RELEASES_API_URL, {
-    headers: { 'User-Agent': 'DuckteInferno-Launcher' },
-    responseType: 'json'
+    headers: {
+      'User-Agent': 'DuckteInferno-Launcher',
+      Accept: 'application/vnd.github+json'
+    },
+    responseType: 'json',
+    timeout: { request: 10000 }
   })
   return response.body as GitHubRelease
 }
@@ -37,8 +41,12 @@ export async function fetchLatestRelease(): Promise<GitHubRelease> {
 export async function fetchAllReleases(): Promise<GitHubRelease[]> {
   const allReleasesUrl = RELEASES_API_URL.replace('/latest', '')
   const response = await got(allReleasesUrl, {
-    headers: { 'User-Agent': 'DuckteInferno-Launcher' },
-    responseType: 'json'
+    headers: {
+      'User-Agent': 'DuckteInferno-Launcher',
+      Accept: 'application/vnd.github+json'
+    },
+    responseType: 'json',
+    timeout: { request: 10000 }
   })
   return response.body as GitHubRelease[]
 }

@@ -27,11 +27,14 @@ export default function Home({ onNavigate }: HomeProps) {
       const settings = await api.getSettings()
       setGameVersion(settings.gameVersion)
 
-      const update = await api.checkForUpdate()
-      if (update.available) {
+      // If no game installed, always show INSTALL regardless of API response
+      if (!settings.gameVersion) {
+        setGameState('installing')
         setUpdateAvailable(true)
-        if (!settings.gameVersion) {
-          setGameState('installing')
+      } else {
+        const update = await api.checkForUpdate()
+        if (update.available) {
+          setUpdateAvailable(true)
         }
       }
     }
