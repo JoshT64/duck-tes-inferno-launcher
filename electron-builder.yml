@@ -5,17 +5,12 @@ directories:
   buildResources: resources
   output: dist-build
 
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: "Duckte's Inferno"
-  artifactName: "DuckteInferno-Launcher-Setup.${ext}"
+portable:
+  artifactName: "DuckteInferno-Launcher.${ext}"
 
 win:
   target:
-    - nsis
+    - portable
   icon: resources/icon.ico
   signAndEditExecutable: false
 
