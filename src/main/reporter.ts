@@ -1,16 +1,23 @@
 import { net } from 'electron'
 import fsp from 'node:fs/promises'
+import path from 'node:path'
 import os from 'node:os'
 import store from './store'
-import { SUPABASE_FUNCTIONS_URL, getUnityLogPath } from './config'
+import { SUPABASE_FUNCTIONS_URL, getUnityLogPath, getGameDataDir } from './config'
 
 const LAUNCHER_API_URL = `${SUPABASE_FUNCTIONS_URL}/launcher-api`
+
+interface GameFile {
+  filename: string
+  content: string
+}
 
 interface BugReportPayload {
   playerId: string
   title: string
   description: string
   playerLog?: string
+  gameFiles?: GameFile[]
   systemInfo?: Record<string, string>
   gameVersion?: string
 }
@@ -19,6 +26,7 @@ interface CrashReportPayload {
   playerId: string
   exitCode: number
   playerLog?: string
+  gameFiles?: GameFile[]
   systemInfo?: Record<string, string>
   gameVersion?: string
 }
@@ -45,6 +53,16 @@ function postJSON(url: string, body: unknown): Promise<void> {
   })
 }
 
+const GAME_DATA_FILES = [
+  'Player.log',
+  'Player-prev.log',
+  'quests/quests_progress.json',
+  'Inventory_save.json',
+  'inventory'
+]
+
+const MAX_FILE_SIZE = 512 * 1024 // 512 KB per file
+
 async function getPlayerLog(): Promise<string> {
   try {
     const fullLog = await fsp.readFile(getUnityLogPath(), 'utf-8')
@@ -53,6 +71,30 @@ async function getPlayerLog(): Promise<string> {
   } catch {
     return 'Could not read Player.log'
   }
+}
+
+async function collectGameFiles(): Promise<GameFile[]> {
+  const gameDataDir = getGameDataDir()
+  const files: GameFile[] = []
+
+  for (const filename of GAME_DATA_FILES) {
+    try {
+      const filePath = path.join(gameDataDir, filename)
+      const stat = await fsp.stat(filePath)
+      if (!stat.isFile()) continue
+
+      let content = await fsp.readFile(filePath, 'utf-8')
+      if (content.length > MAX_FILE_SIZE) {
+        // For large files, keep the tail (most recent data)
+        content = content.slice(-MAX_FILE_SIZE)
+      }
+      files.push({ filename, content })
+    } catch {
+      // File doesn't exist or can't be read — skip it
+    }
+  }
+
+  return files
 }
 
 function getSystemInfo(): Record<string, string> {
@@ -81,6 +123,7 @@ export async function submitBugReport(
 
     if (includeLog) {
       payload.playerLog = await getPlayerLog()
+      payload.gameFiles = await collectGameFiles()
     }
 
     await postJSON(`${LAUNCHER_API_URL}/api/bug-reports`, payload)

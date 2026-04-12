@@ -22,15 +22,18 @@ export function getDefaultInstallPath(): string {
   return path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'DuckteInferno')
 }
 
-export function getUnityLogPath(): string {
+export function getGameDataDir(): string {
   return path.join(
     app.getPath('appData'),
     '..',
     'LocalLow',
     'DucktesInferno',
-    'Ducktes-Inferno',
-    'Player.log'
+    'Duck-te-s-Inferno'
   )
+}
+
+export function getUnityLogPath(): string {
+  return path.join(getGameDataDir(), 'Player.log')
 }
 
 // Player config filename (written to game install dir, read by Unity)

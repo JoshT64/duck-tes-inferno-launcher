@@ -64,7 +64,7 @@ export default function ReportBug() {
           checked={includeLog}
           onChange={(e) => setIncludeLog(e.target.checked)}
         />
-        Attach game log (Player.log — last 200 lines)
+        Attach game files (logs, save data, inventory)
       </label>
       {error && <p className="error">{error}</p>}
       <button
