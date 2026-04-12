@@ -53,9 +53,18 @@ app.whenReady().then(() => {
 
   const mainWindow = createWindow()
 
-  // Check for launcher self-update (portable exe swap)
+  // Check for launcher self-update (portable exe swap) on startup + every 15s
   if (!is.dev) {
-    checkAndApplyLauncherUpdate(mainWindow).catch(() => {})
+    let updating = false
+    const checkLauncherUpdate = (): void => {
+      if (updating) return
+      updating = true
+      checkAndApplyLauncherUpdate(mainWindow)
+        .catch(() => {})
+        .finally(() => { updating = false })
+    }
+    checkLauncherUpdate()
+    setInterval(checkLauncherUpdate, 15_000)
   }
 
   app.on('activate', function () {
