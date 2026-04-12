@@ -15,6 +15,7 @@ export default function PlayButton({ gameState, updatePercent, gameVersion, onPl
       case 'running': return 'RUNNING'
       case 'updating': return `UPDATING ${updatePercent}%`
       case 'installing': return 'INSTALL'
+      case 'update-available': return 'UPDATE'
       default: return 'PLAY'
     }
   }

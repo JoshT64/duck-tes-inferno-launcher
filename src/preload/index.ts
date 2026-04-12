@@ -20,6 +20,12 @@ const api = {
     ipcRenderer.on('download-status', (_event, status) => callback(status))
   },
 
+  onUpdateAvailable: (
+    callback: (data: { version: string; changelog: string }) => void
+  ): void => {
+    ipcRenderer.on('update-available', (_event, data) => callback(data))
+  },
+
   // Game launching
   launchGame: (): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('launch-game'),

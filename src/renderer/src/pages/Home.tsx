@@ -27,14 +27,18 @@ export default function Home({ onNavigate }: HomeProps) {
       const settings = await api.getSettings()
       setGameVersion(settings.gameVersion)
 
-      // If no game installed, always show INSTALL regardless of API response
+      // If no game installed, show INSTALL and wait for user action
       if (!settings.gameVersion) {
         setGameState('installing')
         setUpdateAvailable(true)
       } else {
         const update = await api.checkForUpdate()
         if (update.available) {
+          // Game already installed — auto-download the update immediately
+          setGameState('updating')
+          setDownloadStatus('downloading')
           setUpdateAvailable(true)
+          await api.startUpdate()
         }
       }
     }
@@ -56,6 +60,11 @@ export default function Home({ onNavigate }: HomeProps) {
 
     api.onGameState((state) => {
       setGameState(state as GameState)
+    })
+
+    // Listen for updates detected by the 15-second background poll
+    api.onUpdateAvailable(() => {
+      setUpdateAvailable(true)
     })
   }, [])
 
@@ -96,7 +105,7 @@ export default function Home({ onNavigate }: HomeProps) {
       </div>
 
       <PlayButton
-        gameState={updateAvailable && gameState === 'stopped' ? 'installing' : gameState}
+        gameState={updateAvailable && gameState === 'stopped' ? (gameVersion ? 'update-available' : 'installing') : gameState}
         updatePercent={downloadProgress.percent}
         gameVersion={gameVersion}
         onPlay={handlePlay}

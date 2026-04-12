@@ -29,5 +29,5 @@ export interface Settings {
   gameVersion: string
 }
 
-export type GameState = 'stopped' | 'running' | 'updating' | 'installing'
+export type GameState = 'stopped' | 'running' | 'updating' | 'installing' | 'update-available'
 export type DownloadStatus = 'downloading' | 'extracting' | 'installing' | 'complete'
