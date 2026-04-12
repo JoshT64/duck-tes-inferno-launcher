@@ -89,6 +89,9 @@ const api = {
   // First launch check
   isFirstLaunch: (): Promise<boolean> => ipcRenderer.invoke('is-first-launch'),
 
+  // Launcher version
+  getLauncherVersion: (): Promise<string> => ipcRenderer.invoke('get-launcher-version'),
+
   // Launcher self-update notifications
   onLauncherUpdate: (
     callback: (data: { status: string; version: string; percent: number }) => void

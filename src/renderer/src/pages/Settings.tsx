@@ -8,6 +8,7 @@ export default function Settings() {
   const [installPath, setInstallPath] = useState('')
   const [autoUpdate, setAutoUpdate] = useState(true)
   const [gameVersion, setGameVersion] = useState('')
+  const [launcherVersion, setLauncherVersion] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -20,6 +21,8 @@ export default function Settings() {
       setInstallPath(settings.installPath)
       setAutoUpdate(settings.autoUpdate)
       setGameVersion(settings.gameVersion)
+      const lv = await api.getLauncherVersion()
+      setLauncherVersion(lv)
     }
     load()
   }, [])
@@ -107,6 +110,9 @@ export default function Settings() {
         <div className="version-info">
           <span>Game version: {gameVersion || 'Not installed'}</span>
           <button onClick={handleCheckUpdate}>Check for Updates</button>
+        </div>
+        <div className="version-info">
+          <span>Launcher version: {launcherVersion}</span>
         </div>
       </section>
       {message && <p className="settings-message">{message}</p>}

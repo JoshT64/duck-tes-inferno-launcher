@@ -119,8 +119,14 @@ export async function checkAndApplyLauncherUpdate(
       },
       exeAsset.size
     )
+
+    // Verify the download is the right size
+    const stat = await fsp.stat(updateExe)
+    if (exeAsset.size > 0 && stat.size !== exeAsset.size) {
+      throw new Error(`Size mismatch: expected ${exeAsset.size}, got ${stat.size}`)
+    }
   } catch {
-    // Clean up failed download
+    // Clean up failed/corrupt download
     await fsp.rm(updateExe, { force: true })
     return false
   }
@@ -131,11 +137,19 @@ export async function checkAndApplyLauncherUpdate(
     percent: 100
   })
 
-  // Write a batch script that swaps the exe after this process exits
+  // Write a batch script that waits for the process to exit, then swaps the exe
+  const pid = process.pid
   const script = [
     '@echo off',
-    // Wait for the current process to release the exe file
-    'timeout /t 2 /nobreak >nul',
+    // Poll until the launcher process has fully exited
+    `:wait`,
+    `tasklist /FI "PID eq ${pid}" 2>nul | find "${pid}" >nul`,
+    `if not errorlevel 1 (`,
+    `  timeout /t 1 /nobreak >nul`,
+    `  goto wait`,
+    `)`,
+    // Extra pause to ensure file handles are released
+    'timeout /t 1 /nobreak >nul',
     // Remove previous backup if it exists
     `if exist "${oldExe}" del /f "${oldExe}"`,
     // Rename current exe to .old

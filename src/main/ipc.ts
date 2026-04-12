@@ -1,4 +1,4 @@
-import { ipcMain, dialog, net } from 'electron'
+import { app, ipcMain, dialog, net } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { randomUUID } from 'node:crypto'
 import store from './store'
@@ -189,6 +189,9 @@ export function setupIPC(mainWindow: BrowserWindow): void {
   ipcMain.handle('is-first-launch', () => {
     return !store.get('playerId')
   })
+
+  // Launcher version
+  ipcMain.handle('get-launcher-version', () => app.getVersion())
 
   // Window controls
   ipcMain.on('window-minimize', () => mainWindow.minimize())
