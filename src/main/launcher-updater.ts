@@ -92,15 +92,19 @@ export async function checkAndApplyLauncherUpdate(
   const exeAsset = release.assets.find((a) => a.name.endsWith('.exe'))
   if (!exeAsset) return false
 
-  const currentExe = process.execPath
-  const exeDir = path.dirname(currentExe)
-  const exeName = path.basename(currentExe)
+  // PORTABLE_EXECUTABLE_FILE points to the actual portable exe the user ran.
+  // process.execPath points to the extracted copy in %TEMP% — not what we want.
+  const portableExe = process.env.PORTABLE_EXECUTABLE_FILE
+  if (!portableExe) return false // Not running as portable, skip
+
+  const exeDir = path.dirname(portableExe)
+  const exeName = path.basename(portableExe)
   const updateExe = path.join(exeDir, `${exeName}.update`)
   const oldExe = path.join(exeDir, `${exeName}.old`)
   const batchPath = path.join(exeDir, '_launcher_update.bat')
 
   // Notify renderer that a launcher update is starting
-  mainWindow.webContents.send('launcher-update', {
+  !mainWindow.isDestroyed() && mainWindow.webContents.send('launcher-update', {
     status: 'downloading',
     version: release.tag_name,
     percent: 0
@@ -111,7 +115,7 @@ export async function checkAndApplyLauncherUpdate(
       exeAsset.browser_download_url,
       updateExe,
       (percent) => {
-        mainWindow.webContents.send('launcher-update', {
+        !mainWindow.isDestroyed() && mainWindow.webContents.send('launcher-update', {
           status: 'downloading',
           version: release.tag_name,
           percent
@@ -131,7 +135,7 @@ export async function checkAndApplyLauncherUpdate(
     return false
   }
 
-  mainWindow.webContents.send('launcher-update', {
+  !mainWindow.isDestroyed() && mainWindow.webContents.send('launcher-update', {
     status: 'restarting',
     version: release.tag_name,
     percent: 100
@@ -152,12 +156,12 @@ export async function checkAndApplyLauncherUpdate(
     'timeout /t 1 /nobreak >nul',
     // Remove previous backup if it exists
     `if exist "${oldExe}" del /f "${oldExe}"`,
-    // Rename current exe to .old
-    `move /y "${currentExe}" "${oldExe}"`,
+    // Rename current portable exe to .old
+    `move /y "${portableExe}" "${oldExe}"`,
     // Rename downloaded update to the original name
-    `move /y "${updateExe}" "${currentExe}"`,
-    // Relaunch
-    `start "" "${currentExe}"`,
+    `move /y "${updateExe}" "${portableExe}"`,
+    // Relaunch the portable exe
+    `start "" "${portableExe}"`,
     // Clean up backup and this script
     `del /f "${oldExe}"`,
     `del /f "%~f0"`

@@ -37,9 +37,10 @@ function netRequest(method: string, url: string, body?: unknown): Promise<void> 
 export function setupIPC(mainWindow: BrowserWindow): void {
   // Poll for game updates every 15 seconds
   setInterval(async () => {
+    if (mainWindow.isDestroyed()) return
     try {
       const release = await fetchLatestRelease()
-      if (isUpdateAvailable(release.tag_name)) {
+      if (!mainWindow.isDestroyed() && isUpdateAvailable(release.tag_name)) {
         mainWindow.webContents.send('update-available', {
           version: release.tag_name,
           changelog: release.body
