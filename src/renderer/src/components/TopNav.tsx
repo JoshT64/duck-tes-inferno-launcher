@@ -8,7 +8,7 @@ interface TopNavProps {
 }
 
 const tabs = [
-  { id: 'news', label: 'News' },
+  { id: 'Home', label: 'Home' },
   { id: 'changelog', label: 'Changelog' },
   { id: 'report', label: 'Report Bug' }
 ]

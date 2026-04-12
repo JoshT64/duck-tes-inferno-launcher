@@ -1,6 +1,6 @@
 {
   "name": "ducktes-inferno-launcher",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Game launcher for Duckte's Inferno",
   "main": "./out/main/index.js",
   "author": "JoshT64",
