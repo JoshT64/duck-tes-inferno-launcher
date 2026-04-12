@@ -1,10 +1,14 @@
 import { app } from 'electron'
 import path from 'node:path'
 
-// GitHub repos
+// GitHub repos — game releases
 export const RELEASES_OWNER = 'JoshT64'
 export const RELEASES_REPO = 'duck-tes-inferno-releases'
 export const RELEASES_API_URL = `https://api.github.com/repos/${RELEASES_OWNER}/${RELEASES_REPO}/releases/latest`
+
+// GitHub repos — launcher self-update
+export const LAUNCHER_REPO = 'duck-tes-inferno-launcher'
+export const LAUNCHER_RELEASES_API_URL = `https://api.github.com/repos/${RELEASES_OWNER}/${LAUNCHER_REPO}/releases/latest`
 
 // Read-only token for public repo access (avoids 60 req/hr anonymous rate limit → 5,000 req/hr)
 // Injected at build time via VITE_GITHUB_TOKEN env var, or falls back to .env file

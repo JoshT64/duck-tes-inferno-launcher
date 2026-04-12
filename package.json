@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "electron-store": "^10.0.0",
-    "electron-updater": "^6.3.9",
     "got": "^14.4.5",
     "node-stream-zip": "^1.15.0",
     "react-markdown": "^10.1.0"

@@ -3,7 +3,8 @@
     "allow": [
       "Read(//c/Users/Josh/.claude/**)",
       "mcp__supabase__list_edge_functions",
-      "mcp__supabase__get_edge_function"
+      "mcp__supabase__get_edge_function",
+      "Bash(find C:\\\\Users\\\\Josh\\\\Development\\\\Duck-te-s-Inferno:*)"
     ]
   }
 }

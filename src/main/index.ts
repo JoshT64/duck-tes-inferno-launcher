@@ -1,18 +1,19 @@
 import { app, shell, BrowserWindow, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { autoUpdater } from 'electron-updater'
 import { setupIPC } from './ipc'
 import store from './store'
 import { getDefaultInstallPath } from './config'
+import { checkAndApplyLauncherUpdate } from './launcher-updater'
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 680,
     show: false,
     frame: false,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -35,6 +36,7 @@ function createWindow(): void {
   }
 
   setupIPC(mainWindow)
+  return mainWindow
 }
 
 app.whenReady().then(() => {
@@ -49,11 +51,12 @@ app.whenReady().then(() => {
     store.set('installPath', getDefaultInstallPath())
   }
 
-  createWindow()
+  const mainWindow = createWindow()
 
-  // Launcher self-updates via electron-updater
-  autoUpdater.autoDownload = true
-  autoUpdater.checkForUpdatesAndNotify()
+  // Check for launcher self-update (portable exe swap)
+  if (!is.dev) {
+    checkAndApplyLauncherUpdate(mainWindow).catch(() => {})
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

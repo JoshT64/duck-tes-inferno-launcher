@@ -1085,3 +1085,19 @@ button {
 .crash-dialog {
   animation: slideUp 0.25s ease;
 }
+
+/* --- Launcher Self-Update Banner --- */
+.launcher-update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  z-index: 9999;
+  animation: slideUp 0.3s ease;
+}

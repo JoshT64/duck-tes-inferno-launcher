@@ -26,7 +26,7 @@ interface VersionInfo {
 export type { GitHubRelease }
 
 /** Simple JSON GET using Electron's net module (respects proxy, no ESM issues) */
-function fetchJSON(url: string): Promise<unknown> {
+export function fetchJSON(url: string): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const request = net.request(url)
     request.setHeader('User-Agent', 'DuckteInferno-Launcher')

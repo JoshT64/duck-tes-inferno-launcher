@@ -16,6 +16,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [displayName, setDisplayName] = useState('')
   const [crashData, setCrashData] = useState<CrashData | null>(null)
+  const [launcherUpdate, setLauncherUpdate] = useState<{ status: string; version: string; percent: number } | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -29,6 +30,7 @@ export default function App() {
     init()
 
     api.onGameCrashed((data) => setCrashData(data))
+    api.onLauncherUpdate((data) => setLauncherUpdate(data))
   }, [])
 
   if (isFirstLaunch === null) {
@@ -82,6 +84,13 @@ export default function App() {
       <main className="content">{renderPage()}</main>
       {crashData && (
         <CrashDialog crashData={crashData} onDismiss={() => setCrashData(null)} />
+      )}
+      {launcherUpdate && (
+        <div className="launcher-update-banner">
+          {launcherUpdate.status === 'downloading'
+            ? `Updating launcher to ${launcherUpdate.version}... ${launcherUpdate.percent}%`
+            : `Restarting launcher...`}
+        </div>
       )}
     </div>
   )

@@ -89,6 +89,13 @@ const api = {
   // First launch check
   isFirstLaunch: (): Promise<boolean> => ipcRenderer.invoke('is-first-launch'),
 
+  // Launcher self-update notifications
+  onLauncherUpdate: (
+    callback: (data: { status: string; version: string; percent: number }) => void
+  ): void => {
+    ipcRenderer.on('launcher-update', (_event, data) => callback(data))
+  },
+
   // Window controls (frameless window)
   minimizeWindow: (): void => {
     ipcRenderer.send('window-minimize')
