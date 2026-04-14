@@ -146,27 +146,40 @@ export async function checkAndApplyLauncherUpdate(
 
   // Write a batch script that waits for the process to exit, then swaps the exe
   const pid = process.pid
+  const logFile = path.join(exeDir, '_launcher_update.log')
   const script = [
     '@echo off',
+    `echo [%date% %time%] Update script started >> "${logFile}"`,
     // Poll until the launcher process has fully exited
+    `echo [%date% %time%] Waiting for PID ${pid} to exit... >> "${logFile}"`,
     `:wait`,
     `tasklist /FI "PID eq ${pid}" 2>nul | find "${pid}" >nul`,
     `if not errorlevel 1 (`,
     `  timeout /t 1 /nobreak >nul`,
     `  goto wait`,
     `)`,
+    `echo [%date% %time%] Process exited >> "${logFile}"`,
     // Extra pause to ensure file handles are released
-    'timeout /t 1 /nobreak >nul',
+    'timeout /t 2 /nobreak >nul',
     // Remove previous backup if it exists
     `if exist "${oldExe}" del /f "${oldExe}"`,
     // Rename current portable exe to .old
+    `echo [%date% %time%] Moving current exe to .old >> "${logFile}"`,
     `move /y "${portableExe}" "${oldExe}"`,
+    `if errorlevel 1 echo [%date% %time%] FAILED to move current exe >> "${logFile}"`,
     // Rename downloaded update to the original name
+    `echo [%date% %time%] Moving update to exe >> "${logFile}"`,
     `move /y "${updateExe}" "${portableExe}"`,
+    `if errorlevel 1 echo [%date% %time%] FAILED to move update exe >> "${logFile}"`,
     // Relaunch the portable exe
+    `echo [%date% %time%] Launching: ${portableExe} >> "${logFile}"`,
     `start "" "${portableExe}"`,
+    `if errorlevel 1 echo [%date% %time%] FAILED to launch >> "${logFile}"`,
+    // Wait before cleanup so the new exe can start loading
+    'timeout /t 5 /nobreak >nul',
     // Clean up backup and this script
-    `del /f "${oldExe}"`,
+    `del /f "${oldExe}" 2>nul`,
+    `echo [%date% %time%] Done >> "${logFile}"`,
     `del /f "%~f0"`
   ].join('\r\n')
 
