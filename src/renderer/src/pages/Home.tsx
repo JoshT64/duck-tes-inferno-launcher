@@ -38,7 +38,13 @@ export default function Home({ onNavigate }: HomeProps) {
           setGameState('updating')
           setDownloadStatus('downloading')
           setUpdateAvailable(true)
-          await api.startUpdate()
+          try {
+            await api.startUpdate()
+          } catch {
+            // Download/install failed — reset so user can retry
+            setGameState('stopped')
+            setUpdateAvailable(true)
+          }
         }
       }
     }
@@ -72,7 +78,13 @@ export default function Home({ onNavigate }: HomeProps) {
     if (updateAvailable || gameState === 'installing') {
       setGameState('updating')
       setDownloadStatus('downloading')
-      await api.startUpdate()
+      try {
+        await api.startUpdate()
+      } catch {
+        // Download/install failed — reset so user can retry
+        setGameState('stopped')
+        setUpdateAvailable(true)
+      }
     } else {
       await api.launchGame()
     }

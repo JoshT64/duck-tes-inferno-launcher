@@ -7,9 +7,10 @@ import { getDefaultInstallPath } from './config'
 import { checkAndApplyLauncherUpdate } from './launcher-updater'
 import { setQuitting, isQuitting } from './app-state'
 
-// Suppress "Object has been destroyed" errors from in-flight HTTP responses during shutdown
+// Suppress "Object has been destroyed" errors from in-flight HTTP responses during shutdown.
+// These fire when Electron's net module destroys internal objects while HTTP streams are mid-read.
 process.on('uncaughtException', (err) => {
-  if (isQuitting() && err.message?.includes('Object has been destroyed')) return
+  if (err.message?.includes('Object has been destroyed')) return
   console.error('Uncaught exception:', err)
 })
 
