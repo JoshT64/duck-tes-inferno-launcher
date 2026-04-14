@@ -135,8 +135,6 @@ export async function downloadAndInstall(
     const installPath = store.get('installPath')
     const gameDir = path.join(installPath, 'DuckteInferno')
     const gameFilesDir = path.join(gameDir, 'game')
-    const newDir = path.join(gameDir, 'game.new')
-    const backupDir = path.join(gameDir, 'game.backup')
     const tempZip = path.join(gameDir, 'game.zip.tmp')
 
     const zipAsset = release.assets.find((a) => a.name.endsWith('.zip'))
@@ -154,26 +152,17 @@ export async function downloadAndInstall(
       })
     })
 
-    // Extract
+    // Extract directly into game directory (overwrite in place).
+    // Atomic rename fails on Windows when antivirus/indexer holds file locks.
     safeSend(mainWindow, 'download-status', 'extracting')
-    await fsp.rm(newDir, { recursive: true, force: true })
-    await fsp.mkdir(newDir, { recursive: true })
+    await fsp.mkdir(gameFilesDir, { recursive: true })
 
     const zip = new StreamZip.async({ file: tempZip, skipEntryNameValidation: true })
-    await zip.extract(null, newDir)
+    await zip.extract(null, gameFilesDir)
     await zip.close()
 
-    // Atomic swap
-    safeSend(mainWindow, 'download-status', 'installing')
-    await fsp.rm(backupDir, { recursive: true, force: true })
-
-    if (fs.existsSync(gameFilesDir)) {
-      await fsp.rename(gameFilesDir, backupDir)
-    }
-
-    await fsp.rename(newDir, gameFilesDir)
-
     // Write version file
+    safeSend(mainWindow, 'download-status', 'installing')
     const versionData: VersionInfo = { version: release.tag_name }
     await fsp.writeFile(
       path.join(gameDir, VERSION_FILENAME),
@@ -184,7 +173,6 @@ export async function downloadAndInstall(
 
     // Cleanup
     await fsp.rm(tempZip, { force: true })
-    await fsp.rm(backupDir, { recursive: true, force: true })
 
     safeSend(mainWindow, 'download-status', 'complete')
   } finally {
