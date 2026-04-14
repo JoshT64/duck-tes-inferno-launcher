@@ -6,6 +6,7 @@ import https from 'node:https'
 import { spawn } from 'node:child_process'
 import { fetchJSON } from './updater'
 import { LAUNCHER_RELEASES_API_URL } from './config'
+import { isQuitting, isGameDownloading, setQuitting } from './app-state'
 
 interface GitHubRelease {
   tag_name: string
@@ -75,6 +76,8 @@ function downloadFile(
 export async function checkAndApplyLauncherUpdate(
   mainWindow: BrowserWindow
 ): Promise<boolean> {
+  if (isQuitting() || isGameDownloading()) return false
+
   const currentVersion = app.getVersion()
 
   let release: GitHubRelease
@@ -177,6 +180,7 @@ export async function checkAndApplyLauncherUpdate(
   }).unref()
 
   // Give the renderer a moment to show the restart message, then quit
+  setQuitting()
   setTimeout(() => app.quit(), 1500)
 
   return true

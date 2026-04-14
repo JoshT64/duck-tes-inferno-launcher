@@ -6,6 +6,7 @@ import https from 'node:https'
 import StreamZip from 'node-stream-zip'
 import store from './store'
 import { RELEASES_API_URL, VERSION_FILENAME, GITHUB_TOKEN } from './config'
+import { setGameDownloading } from './app-state'
 
 interface GitHubRelease {
   tag_name: string
@@ -118,63 +119,75 @@ function downloadFile(
   })
 }
 
+/** Send to renderer only if the window is still alive */
+function safeSend(mainWindow: BrowserWindow, channel: string, data: unknown): void {
+  if (!mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, data)
+  }
+}
+
 export async function downloadAndInstall(
   release: GitHubRelease,
   mainWindow: BrowserWindow
 ): Promise<void> {
-  const installPath = store.get('installPath')
-  const gameDir = path.join(installPath, 'DuckteInferno')
-  const gameFilesDir = path.join(gameDir, 'game')
-  const newDir = path.join(gameDir, 'game.new')
-  const backupDir = path.join(gameDir, 'game.backup')
-  const tempZip = path.join(gameDir, 'game.zip.tmp')
+  setGameDownloading(true)
+  try {
+    const installPath = store.get('installPath')
+    const gameDir = path.join(installPath, 'DuckteInferno')
+    const gameFilesDir = path.join(gameDir, 'game')
+    const newDir = path.join(gameDir, 'game.new')
+    const backupDir = path.join(gameDir, 'game.backup')
+    const tempZip = path.join(gameDir, 'game.zip.tmp')
 
-  const zipAsset = release.assets.find((a) => a.name.endsWith('.zip'))
-  if (!zipAsset) throw new Error('No zip asset found in release')
+    const zipAsset = release.assets.find((a) => a.name.endsWith('.zip'))
+    if (!zipAsset) throw new Error('No zip asset found in release')
 
-  await fsp.mkdir(gameDir, { recursive: true })
+    await fsp.mkdir(gameDir, { recursive: true })
 
-  // Download with progress
-  await downloadFile(zipAsset.browser_download_url, tempZip, (transferred, total) => {
-    const actualTotal = total || zipAsset.size
-    mainWindow.webContents.send('download-progress', {
-      percent: actualTotal > 0 ? Math.round((transferred / actualTotal) * 100) : 0,
-      transferred,
-      total: actualTotal
+    // Download with progress
+    await downloadFile(zipAsset.browser_download_url, tempZip, (transferred, total) => {
+      const actualTotal = total || zipAsset.size
+      safeSend(mainWindow, 'download-progress', {
+        percent: actualTotal > 0 ? Math.round((transferred / actualTotal) * 100) : 0,
+        transferred,
+        total: actualTotal
+      })
     })
-  })
 
-  // Extract
-  mainWindow.webContents.send('download-status', 'extracting')
-  await fsp.rm(newDir, { recursive: true, force: true })
-  await fsp.mkdir(newDir, { recursive: true })
+    // Extract
+    safeSend(mainWindow, 'download-status', 'extracting')
+    await fsp.rm(newDir, { recursive: true, force: true })
+    await fsp.mkdir(newDir, { recursive: true })
 
-  const zip = new StreamZip.async({ file: tempZip, skipEntryNameValidation: true })
-  await zip.extract(null, newDir)
-  await zip.close()
+    const zip = new StreamZip.async({ file: tempZip, skipEntryNameValidation: true })
+    await zip.extract(null, newDir)
+    await zip.close()
 
-  // Atomic swap
-  mainWindow.webContents.send('download-status', 'installing')
-  await fsp.rm(backupDir, { recursive: true, force: true })
+    // Atomic swap
+    safeSend(mainWindow, 'download-status', 'installing')
+    await fsp.rm(backupDir, { recursive: true, force: true })
 
-  if (fs.existsSync(gameFilesDir)) {
-    await fsp.rename(gameFilesDir, backupDir)
+    if (fs.existsSync(gameFilesDir)) {
+      await fsp.rename(gameFilesDir, backupDir)
+    }
+
+    await fsp.rename(newDir, gameFilesDir)
+
+    // Write version file
+    const versionData: VersionInfo = { version: release.tag_name }
+    await fsp.writeFile(
+      path.join(gameDir, VERSION_FILENAME),
+      JSON.stringify(versionData, null, 2)
+    )
+
+    store.set('gameVersion', release.tag_name)
+
+    // Cleanup
+    await fsp.rm(tempZip, { force: true })
+    await fsp.rm(backupDir, { recursive: true, force: true })
+
+    safeSend(mainWindow, 'download-status', 'complete')
+  } finally {
+    setGameDownloading(false)
   }
-
-  await fsp.rename(newDir, gameFilesDir)
-
-  // Write version file
-  const versionData: VersionInfo = { version: release.tag_name }
-  await fsp.writeFile(
-    path.join(gameDir, VERSION_FILENAME),
-    JSON.stringify(versionData, null, 2)
-  )
-
-  store.set('gameVersion', release.tag_name)
-
-  // Cleanup
-  await fsp.rm(tempZip, { force: true })
-  await fsp.rm(backupDir, { recursive: true, force: true })
-
-  mainWindow.webContents.send('download-status', 'complete')
 }

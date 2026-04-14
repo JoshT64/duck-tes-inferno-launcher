@@ -5,6 +5,13 @@ import { setupIPC } from './ipc'
 import store from './store'
 import { getDefaultInstallPath } from './config'
 import { checkAndApplyLauncherUpdate } from './launcher-updater'
+import { setQuitting, isQuitting } from './app-state'
+
+// Suppress "Object has been destroyed" errors from in-flight HTTP responses during shutdown
+process.on('uncaughtException', (err) => {
+  if (isQuitting() && err.message?.includes('Object has been destroyed')) return
+  console.error('Uncaught exception:', err)
+})
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -57,7 +64,7 @@ app.whenReady().then(() => {
   if (!is.dev) {
     let updating = false
     const checkLauncherUpdate = (): void => {
-      if (updating) return
+      if (updating || isQuitting()) return
       updating = true
       checkAndApplyLauncherUpdate(mainWindow)
         .catch(() => {})
@@ -66,6 +73,8 @@ app.whenReady().then(() => {
     checkLauncherUpdate()
     setInterval(checkLauncherUpdate, 15_000)
   }
+
+  app.on('before-quit', () => setQuitting())
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
