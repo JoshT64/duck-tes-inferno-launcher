@@ -126,6 +126,25 @@ function safeSend(mainWindow: BrowserWindow, channel: string, data: unknown): vo
   }
 }
 
+/** Recursively copy src into dest, overwriting files. Skips files that are locked. */
+async function copyDir(src: string, dest: string): Promise<void> {
+  await fsp.mkdir(dest, { recursive: true })
+  const entries = await fsp.readdir(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+    if (entry.isDirectory()) {
+      await copyDir(srcPath, destPath)
+    } else {
+      try {
+        await fsp.copyFile(srcPath, destPath)
+      } catch {
+        // File is locked (EBUSY/EPERM) — skip it, likely unchanged between versions
+      }
+    }
+  }
+}
+
 export async function downloadAndInstall(
   release: GitHubRelease,
   mainWindow: BrowserWindow
@@ -135,6 +154,7 @@ export async function downloadAndInstall(
     const installPath = store.get('installPath')
     const gameDir = path.join(installPath, 'DuckteInferno')
     const gameFilesDir = path.join(gameDir, 'game')
+    const stagingDir = path.join(gameDir, 'game.new')
     const tempZip = path.join(gameDir, 'game.zip.tmp')
 
     const zipAsset = release.assets.find((a) => a.name.endsWith('.zip'))
@@ -152,17 +172,23 @@ export async function downloadAndInstall(
       })
     })
 
-    // Extract directly into game directory (overwrite in place).
-    // Atomic rename fails on Windows when antivirus/indexer holds file locks.
+    // Extract to a staging directory (always clean, no file locks)
     safeSend(mainWindow, 'download-status', 'extracting')
-    await fsp.mkdir(gameFilesDir, { recursive: true })
+    await fsp.rm(stagingDir, { recursive: true, force: true })
+    await fsp.mkdir(stagingDir, { recursive: true })
 
     const zip = new StreamZip.async({ file: tempZip, skipEntryNameValidation: true })
-    await zip.extract(null, gameFilesDir)
+    await zip.extract(null, stagingDir)
     await zip.close()
 
-    // Write version file
+    // Copy files from staging into the game directory.
+    // Individual file copies succeed even when directory rename fails on Windows
+    // (antivirus/indexer locks). Locked files are skipped — they're typically
+    // unchanged between versions (e.g. the exe that Defender is scanning).
     safeSend(mainWindow, 'download-status', 'installing')
+    await copyDir(stagingDir, gameFilesDir)
+
+    // Write version file
     const versionData: VersionInfo = { version: release.tag_name }
     await fsp.writeFile(
       path.join(gameDir, VERSION_FILENAME),
@@ -173,6 +199,7 @@ export async function downloadAndInstall(
 
     // Cleanup
     await fsp.rm(tempZip, { force: true })
+    await fsp.rm(stagingDir, { recursive: true, force: true })
 
     safeSend(mainWindow, 'download-status', 'complete')
   } finally {

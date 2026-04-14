@@ -138,6 +138,12 @@ export async function checkAndApplyLauncherUpdate(
     return false
   }
 
+  // Re-check: a game download may have started while we were downloading the launcher
+  if (isGameDownloading()) {
+    await fsp.rm(updateExe, { force: true })
+    return false
+  }
+
   !mainWindow.isDestroyed() && mainWindow.webContents.send('launcher-update', {
     status: 'restarting',
     version: release.tag_name,
