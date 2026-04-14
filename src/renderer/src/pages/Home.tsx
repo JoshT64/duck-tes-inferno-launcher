@@ -27,24 +27,14 @@ export default function Home({ onNavigate }: HomeProps) {
       const settings = await api.getSettings()
       setGameVersion(settings.gameVersion)
 
-      // If no game installed, show INSTALL and wait for user action
+      // Check game state — just set UI, don't trigger downloads
       if (!settings.gameVersion) {
         setGameState('installing')
         setUpdateAvailable(true)
       } else {
         const update = await api.checkForUpdate()
         if (update.available) {
-          // Game already installed — auto-download the update immediately
-          setGameState('updating')
-          setDownloadStatus('downloading')
           setUpdateAvailable(true)
-          try {
-            await api.startUpdate()
-          } catch {
-            // Download/install failed — reset so user can retry
-            setGameState('stopped')
-            setUpdateAvailable(true)
-          }
         }
       }
     }

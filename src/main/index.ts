@@ -1,14 +1,14 @@
-import { app, shell, BrowserWindow, globalShortcut } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupIPC } from './ipc'
 import store from './store'
 import { getDefaultInstallPath } from './config'
 import { checkAndApplyLauncherUpdate } from './launcher-updater'
-import { setQuitting, isQuitting } from './app-state'
+import { setQuitting, isQuitting, isGameDownloading } from './app-state'
+import { fetchLatestRelease, isUpdateAvailable } from './updater'
 
 // Suppress "Object has been destroyed" errors from in-flight HTTP responses during shutdown.
-// These fire when Electron's net module destroys internal objects while HTTP streams are mid-read.
 process.on('uncaughtException', (err) => {
   if (err.message?.includes('Object has been destroyed')) return
   console.error('Uncaught exception:', err)
@@ -61,19 +61,43 @@ app.whenReady().then(() => {
 
   const mainWindow = createWindow()
 
-  // Check for launcher self-update (portable exe swap) on startup + every 15s
-  if (!is.dev) {
-    let updating = false
-    const checkLauncherUpdate = (): void => {
-      if (updating || isQuitting()) return
-      updating = true
-      checkAndApplyLauncherUpdate(mainWindow)
-        .catch(() => {})
-        .finally(() => { updating = false })
+  // Single unified poll: launcher update takes priority over game update.
+  // They NEVER run at the same time.
+  let polling = false
+  const poll = async (): Promise<void> => {
+    if (polling || isQuitting() || mainWindow.isDestroyed()) return
+    polling = true
+    try {
+      // Step 1: Check launcher update (production only)
+      if (!is.dev) {
+        const restarting = await checkAndApplyLauncherUpdate(mainWindow)
+        if (restarting) return // App is quitting, stop everything
+      }
+
+      // Step 2: Only check game update if launcher is up to date and no game download active
+      if (!isGameDownloading() && !isQuitting() && !mainWindow.isDestroyed()) {
+        try {
+          const release = await fetchLatestRelease()
+          if (!isQuitting() && !mainWindow.isDestroyed() && isUpdateAvailable(release.tag_name)) {
+            mainWindow.webContents.send('update-available', {
+              version: release.tag_name,
+              changelog: release.body
+            })
+          }
+        } catch {
+          // Game update check failed — will retry next tick
+        }
+      }
+    } catch {
+      // Launcher update check failed — will retry next tick
+    } finally {
+      polling = false
     }
-    checkLauncherUpdate()
-    setInterval(checkLauncherUpdate, 15_000)
   }
+
+  // Run immediately on startup, then every 15 seconds
+  poll()
+  setInterval(poll, 15_000)
 
   app.on('before-quit', () => setQuitting())
 

@@ -11,7 +11,7 @@ import {
 } from './updater'
 import { launchGame, isGameRunning } from './launcher'
 import { submitBugReport, submitCrashReport } from './reporter'
-import { isQuitting, isGameDownloading } from './app-state'
+import { isQuitting } from './app-state'
 
 /** Helper: make HTTP request using Electron's net module */
 function netRequest(method: string, url: string, body?: unknown): Promise<void> {
@@ -36,23 +36,6 @@ function netRequest(method: string, url: string, body?: unknown): Promise<void> 
 }
 
 export function setupIPC(mainWindow: BrowserWindow): void {
-  // Poll for game updates every 15 seconds
-  setInterval(async () => {
-    if (isQuitting() || mainWindow.isDestroyed() || isGameDownloading()) return
-    try {
-      const release = await fetchLatestRelease()
-      if (isQuitting() || mainWindow.isDestroyed() || isGameDownloading()) return
-      if (isUpdateAvailable(release.tag_name)) {
-        mainWindow.webContents.send('update-available', {
-          version: release.tag_name,
-          changelog: release.body
-        })
-      }
-    } catch {
-      // Silently ignore poll failures — next tick will retry
-    }
-  }, 15_000)
-
   // Update checks
   ipcMain.handle('check-for-update', async () => {
     try {

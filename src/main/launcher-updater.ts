@@ -6,7 +6,7 @@ import https from 'node:https'
 import { spawn } from 'node:child_process'
 import { fetchJSON } from './updater'
 import { LAUNCHER_RELEASES_API_URL } from './config'
-import { isQuitting, isGameDownloading, setQuitting } from './app-state'
+import { isQuitting, setQuitting } from './app-state'
 
 interface GitHubRelease {
   tag_name: string
@@ -76,7 +76,7 @@ function downloadFile(
 export async function checkAndApplyLauncherUpdate(
   mainWindow: BrowserWindow
 ): Promise<boolean> {
-  if (isQuitting() || isGameDownloading()) return false
+  if (isQuitting()) return false
 
   const currentVersion = app.getVersion()
 
@@ -134,12 +134,6 @@ export async function checkAndApplyLauncherUpdate(
     }
   } catch {
     // Clean up failed/corrupt download
-    await fsp.rm(updateExe, { force: true })
-    return false
-  }
-
-  // Re-check: a game download may have started while we were downloading the launcher
-  if (isGameDownloading()) {
     await fsp.rm(updateExe, { force: true })
     return false
   }
